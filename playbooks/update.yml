@@ -1,12 +1,14 @@
-- name: Run pre_update hooks
-  vars:
-    step: pre_update
-  ansible.builtin.import_playbook: ./hooks.yml
-
+---
 - name: Add comptatibility support to install_yamls
   hosts: "{{ cifmw_target_host | default('localhost') }}"
   gather_facts: false
   tasks:
+    - name: Run pre_update hooks
+      vars:
+        step: pre_update
+      ansible.builtin.import_role:
+        name: run_hook
+
     - name: Comptatibility layer with install_yamls
       when:
         - cifmw_architecture_scenario is defined
@@ -24,6 +26,7 @@
         remote_src: true
         src: "{{ cifmw_basedir }}/artifacts/repositories/"
         dest: "{{ cifmw_basedir }}/artifacts/before_update_repos/"
+        mode: "0755"
 
     - name: Run repo_setup
       ansible.builtin.include_role:
@@ -38,6 +41,7 @@
         cifmw_set_openstack_containers_openstack_final_env: "operator_env_after_update.txt"
       ansible.builtin.include_role:
         name: set_openstack_containers
+      when: cifmw_ci_gen_kustomize_values_deployment_version is not defined
 
 - name: Sync repos for controller to compute
   hosts: computes
@@ -48,6 +52,7 @@
       ansible.builtin.copy:
         dest: "/etc/yum.repos.d/"
         src: "{{ cifmw_basedir }}/artifacts/repositories/"
+        mode: "0755"
 
 - name: Run Ceph update if part of the deployment
   hosts: "{{ (groups[cifmw_ceph_target | default('computes')] | default([]))[:1] }}"
@@ -73,6 +78,7 @@
           ansible.builtin.copy:
             content: "{{ cephconf['content'] | b64decode }}"
             dest: "/tmp/ceph.conf"
+            mode: "0644"
 
         - name: Extract the CephFSID from ceph.conf
           ansible.builtin.set_fact:
@@ -95,7 +101,8 @@
       ansible.builtin.import_role:
         name: update
 
-- name: Run post_update hooks
-  vars:
-    step: post_update
-  ansible.builtin.import_playbook: ./hooks.yml
+    - name: Run post_update hooks
+      vars:
+        step: post_update
+      ansible.builtin.import_role:
+        name: run_hook

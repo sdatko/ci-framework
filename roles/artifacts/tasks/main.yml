@@ -33,6 +33,7 @@
   ansible.builtin.file:
     path: "{{ cifmw_artifacts_basedir }}/{{ item }}"
     state: directory
+    mode: "0755"
   loop:
     - artifacts
     - logs
@@ -71,6 +72,8 @@
   ansible.builtin.import_tasks: crc.yml
 
 - name: Get EDPM logs
+  when:
+    - cifmw_artifacts_gather_edpm_logs | default(true) | bool
   ignore_errors: true  # noqa: ignore-errors
   ansible.builtin.import_tasks: edpm.yml
 
@@ -86,3 +89,14 @@
       find {{ cifmw_artifacts_basedir }}/logs -type d -exec chmod 0755 '{}' \;
       find {{ cifmw_artifacts_basedir }}/artifacts -type f -exec chmod 0644 '{}' \;
       find {{ cifmw_artifacts_basedir }}/artifacts -type d -exec chmod 0755 '{}' \;
+
+- name: Mask secrets in yaml log files
+  when: cifmw_artifacts_mask_logs |bool
+  ignore_errors: true  # noqa: ignore-errors
+  timeout: 3600
+  crawl_n_mask:
+    path: "{{ item }}"
+    isdir: true
+  loop:
+    - "{{ cifmw_artifacts_basedir }}/logs"
+    - "{{ cifmw_artifacts_basedir }}/artifacts"

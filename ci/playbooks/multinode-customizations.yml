@@ -55,6 +55,10 @@
                 ip4: "{{ _crc_default_net_ip }}"
                 gw4: "{{ _crc_default_gw }}"
                 state: present
+              register: _nmcli_result
+              until: _nmcli_result is success
+              retries: 5
+              delay: 10
 
             - name: Ensure crc does not get "public" DNS
               become: true
@@ -279,7 +283,9 @@
     - name: Get the default iface connection
       register: controller_default_connection_out
       ansible.builtin.command:
-        cmd: "nmcli -g general.connection device show eth0"
+        cmd: >-
+          nmcli -g general.connection
+          device show {{ cifmw_controller_interface_name | default('eth0') }}
 
     - name: Prepend CRC DNS server in the controllers default Network Manager connection configuation
       vars:

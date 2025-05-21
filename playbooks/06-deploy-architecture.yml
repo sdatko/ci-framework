@@ -1,14 +1,15 @@
 ---
-- name: Run pre_deploy hooks
-  when:
-    - cifmw_architecture_scenario is defined
-  vars:
-    step: pre_deploy
-  ansible.builtin.import_playbook: ./hooks.yml
-
 - name: Deploy VA
   hosts: "{{ cifmw_target_host | default('localhost') }}"
   tasks:
+    - name: Run pre_deploy hooks
+      when:
+        - cifmw_architecture_scenario is defined
+      vars:
+        step: pre_deploy
+      ansible.builtin.import_role:
+        name: run_hook
+
     # end_play will end only current play, not the main edpm-deploy.yml
     - name: Early end if not architecture deploy
       tags:
@@ -226,9 +227,12 @@
       tags:
         - update_containers
         - edpm_bootstrap
+      when: cifmw_ci_gen_kustomize_values_deployment_version is not defined
 
     - name: Update containers in deployed OSP operators using set_openstack_containers role
-      when: cifmw_set_openstack_containers | default(false) | bool
+      when:
+        - cifmw_set_openstack_containers | default(false) | bool
+        - cifmw_ci_gen_kustomize_values_deployment_version is not defined
       ansible.builtin.include_role:
         name: set_openstack_containers
       tags:
@@ -277,12 +281,13 @@
         nova-cell0-conductor-0
         nova-manage cell_v2 discover_hosts --verbose
 
-- name: Run post_deploy hooks
-  when:
-    - cifmw_architecture_scenario is defined
-  vars:
-    step: post_deploy
-  ansible.builtin.import_playbook: ./hooks.yml
+    - name: Run post_deploy hooks
+      when:
+        - cifmw_architecture_scenario is defined
+      vars:
+        step: post_deploy
+      ansible.builtin.import_role:
+        name: run_hook
 
 - name: Validations workflow
   ansible.builtin.import_playbook: validations.yml

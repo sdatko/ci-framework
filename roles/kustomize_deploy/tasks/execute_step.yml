@@ -122,13 +122,9 @@
         - not cifmw_kustomize_deploy_generate_crs_only | bool
       vars:
         hooks: "{{ stage.pre_stage_run | default([]) }}"
-        step: "{{ item }}"
+        step: "pre_{{ _stage_name_id }}_run"
       ansible.builtin.include_role:
         name: run_hook
-      loop:
-        - "pre_{{ _stage_name_id }}_run"
-        - "pre_{{ _stage_name }}_run"
-        - "pre_{{ _stage_name | replace( '-', '_') }}_run"
 
     - name: "Generate values.yaml for {{ stage.path }}"
       when:
@@ -151,7 +147,8 @@
             ) |
             combine(
               _cifmw_kustomize_deploy_user_kustomize[_stage_name][_name] is defined |
-              ternary(_cifmw_kustomize_deploy_user_kustomize[_stage_name][_name], {})
+              ternary(_cifmw_kustomize_deploy_user_kustomize[_stage_name][_name], {}),
+              recursive=True
             )
           }}
         cifmw_ci_gen_kustomize_values_userdata_b64: >-
@@ -319,10 +316,6 @@
         - not cifmw_kustomize_deploy_generate_crs_only | bool
       vars:
         hooks: "{{ stage.post_stage_run | default([]) }}"
-        step: "{{ item }}"
+        step: "post_{{ _stage_name_id }}_run"
       ansible.builtin.include_role:
         name: run_hook
-      loop:
-        - "post_{{ _stage_name_id }}_run"
-        - "post_{{ _stage_name }}_run"
-        - "post_{{ _stage_name | replace('-', '_') }}_run"

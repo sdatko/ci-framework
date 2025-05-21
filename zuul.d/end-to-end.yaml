@@ -2,7 +2,7 @@
 # cifmw base job
 - job:
     name: cifmw-end-to-end-base
-    nodeset: centos-9-crc-2-39-0-3xl
+    nodeset: centos-9-crc-2-48-0-3xl
     parent: base-simple-crc
     vars:
       crc_parameters: "--memory 24000 --disk-size 120 --cpus 8"
@@ -23,9 +23,9 @@
     name: cifmw-end-to-end
     parent: cifmw-end-to-end-base
     files:
-      - ^roles/.*_build/(defaults|files|handlers|library|lookup_plugins|module_utils|tasks|templates|vars).*
-      - ^roles/build.*/(defaults|files|handlers|library|lookup_plugins|module_utils|tasks|templates|vars).*
-      - ^roles/openshift_.*/(defaults|files|handlers|library|lookup_plugins|module_utils|tasks|templates|vars).*
+      - ^roles/.*_build/.*
+      - ^roles/build.*/.*
+      - ^roles/openshift_.*/.*
       - ^playbooks/.*build.*.yml
     irrelevant-files:
       - ^.*/*.md
@@ -49,7 +49,6 @@
       - ^ci/templates
       - ^docs
       - ^.*/*.md
-      - ^OWNERS
       - ^.github
     vars:
       cifmw_extras:
